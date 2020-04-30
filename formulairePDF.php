@@ -8,7 +8,7 @@
    <script src="public/javascript/jquery-3.4.1"></script>
    <script src="public/javascript/bootstrap.min.js"></script>
    <script>
-      // ajaxStart et ajaxStop permettent de désactiver le bouton submit et d'afficher l'image de chargement tant que le serveur n'a pas renvoyé de réponses, puis de réactiver et de cacher
+      //ajaxStart and ajaxStop disable the submit button, and shows the loading gif as long as the server doesn't respond, then re-activate the button and hides the image
       $(document).ajaxStart(function() {
          $('#loading').show();
          $("#succes").hide();
@@ -26,7 +26,6 @@
             if (fichier != undefined) {
                var form_data = new FormData();
                form_data.append('file', fichier);
-               // code Ajax envoyant le fichier au PHP, et affichant le retour du serveur
                $.ajax({
                   type: 'POST',
                   url: 'Traitement_Donnees_Compte_Pages.php',
@@ -36,22 +35,20 @@
                   success: function(reponse) {
                      if (reponse == 'failure' || reponse == 'notPDF' || reponse == 'tooHeavy') {
                         $("#succes").hide();
-                        //Affichage des différents messages d'erreurs
                         if (reponse == 'failure') {
-                           alert('Le traitement du fichier à échoué');
+                           alert('The file couldn\'t be analyzed');
                         } else if (reponse == 'notPDF') {
-                           alert('Le fichier n\'est pas un PDF.');
+                           alert('The file is not a PDF.');
                         } else if (reponse == 'tooHeavy') {
-                           alert('Le fichier envoyé est trop lourd.');
+                           alert('The file is too heavy.');
                         }
-                        //Si erreur -> on remet les valeurs des inputs à 0, et on remet à 0 l'upload
+                        //If error, we re-initialize the inputs values
                         $("#PDFUploadFile").replaceWith($("#PDFUploadFile").val('').clone(true));
                         $("#nbPages").attr("value", "0").attr("placeholder", "0");
                         $("#nbPagesC").attr("value", "0").attr("placeholder", "0");
                         $("#nbPagesNB").attr("value", "0").attr("placeholder", "0");
                      } else {
                         var obj = JSON.parse(reponse);
-                        // Retour et affichage de la phrase récapitulative, et peuplement des attributs "value" et "placeholder" des inputs avec les valeurs de retour
                         var paragInfo = "";
                         if (obj.NbPagesNB == obj.NbPages) {
                            paragInfo = "Votre document comporte " + obj.NbPages + " pages, toutes en noir et blanc.";
@@ -73,12 +70,6 @@
       })
    </script>
 </head>
-
-<!-- Si vous integrez le programme dans une nouvelle page, attention à :
-         -Bien conserver les id des input (myForm, nbPagesNB, nbPagesC, submit, PDFUploadFile, succes)
-         -Ne pas oublier les dépendances externes (jQuery, et l'image de chargement se trouvant dans /public/images)
-         -Copier le code jQuery tel quel
--->
 
 <body>
    <form method='post' action='' name='myform' id="myForm" enctype='multipart/form-data'>

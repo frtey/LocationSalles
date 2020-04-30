@@ -1,7 +1,6 @@
 <?php
-//Adapter l'application pour le site pro; rechercher solution pour plugin WordPress
 
-//Vérification du type et de la taille du fichier envoyé
+//checks the type and size of sent file
 if ($_FILES['file']['type'] != 'application/pdf') {
     echo "notPDF";
     return;
@@ -11,30 +10,30 @@ if ($_FILES['file']['type'] != 'application/pdf') {
 }
 
 try {
-   //Si dossier d'upload n'existe pas, le crée; déplace le fichier uploadé vers le dossier d'uploads
+   //If upload folder doesn't exist, creates it; moves uploaded file to new folder
    if (!file_exists('uploads')) {
       mkdir('uploads', 0777);
    }
    $_FILES['file']['name'] =  str_replace(' ', '_', $_FILES['file']['name']);
    move_uploaded_file($_FILES['file']['tmp_name'], 'uploads/' . $_FILES['file']['name']);
 
-   //Ligne de commande interrogeant GhostScript, récupérant un tableau de sortie de commande ($outputs), et un code d'execution de commande ($retour), où 0 est bien, et tout autre chiffre indique problème
+   //command line that asks Ghostscript for a page by page analysis of the uploaded file. Receives an array ($outputs), and a success code ($retour), where 0 is OK, anything else means an error occured
    exec("Ghostscript/gs-950 -o - -sDEVICE=inkcov uploads/" . $_FILES['file']['name'] . " 2>&1", $outputs, $retour);
 
-   //Nettoyage du tableau
+   //Cleans the array
    $ProfilsColosPagesTemp = [];
    foreach($outputs as $output) {
-      if(substr($output, -1) == "K") { //Ne prend que les éléments se terminant par "K" (donc tout ceux avec les profils colorimétriques de la page) => Tout les éléments du tableau inutiles sont laissés de coté
+      if(substr($output, -1) == "K") { //Only push in the array lines that finishes with 'K', meaning they contain color informations
          array_push($ProfilsColosPagesTemp, $output);
       }
    }
 
-   //Création tableau de tableau pour parcours ultérieur
+   //Create array of array
    $ProfilsColosPages = [];
    foreach($ProfilsColosPagesTemp as $ProfilTemp) {
       $ProfilTemp = explode(" ", $ProfilTemp);
       $Profil = [];
-      //Suppression des éléments vides
+      //Deletes empty elements
       for($i = 0; $i < count($ProfilTemp); $i++) {
          if(!empty($ProfilTemp[$i])) {
             array_push($Profil, $ProfilTemp[$i]);
@@ -43,21 +42,21 @@ try {
       array_push($ProfilsColosPages, $Profil);
    }
 
-   //Tests couleurs, compte du nombre de pages couleurs et peuplement d'un tableau $tabPages avec numéros des pages couleurs
+   //Color tests, count color pages and push these page numbers in an array
    $tabPagesCouleurs = [];
    $i = 1;
-   $nbPages = count($ProfilsColosPages); //Nombre de pages total
+   $nbPages = count($ProfilsColosPages); //Total page number
    foreach($ProfilsColosPages as $Page) {
-      if ($Page[0] > 0 || $Page[1] > 0 || $Page[2] > 0) {// && (($Page[0] != $Page[1]) || ($Page[2] != $Page[1]))) { //La partie commentée ajoute des conditions permettant de considérer le grayscale comme non-couleur. Produit des erreurs si une page possède la même répartition de CMYK
+      if ($Page[0] > 0 || $Page[1] > 0 || $Page[2] > 0) {
          array_push($tabPagesCouleurs, $i);
       }
       $i++;
    }
 
-   //Nombre de pages noir et blanc
+   //Total of B&W pages
    $nbPagesNB = $nbPages - count($tabPagesCouleurs);
 
-   //Création d'un tableau avec clés, puis transformation en JSON renvoyé à la page formulairePDF.ph pour affichage
+   //Creates array with keys, encodes it in json
    $tabFinal = [
       'NbPages' => $nbPages,
       'NbPagesC' => count($tabPagesCouleurs),
